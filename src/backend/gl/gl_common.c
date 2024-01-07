@@ -610,6 +610,11 @@ static bool gl_win_shader_from_stringv(const char **vshader_strv,
 
 	gl_check_err();
 
+	bind_uniform(ret, win_tex);
+	bind_uniform(ret, use_win);
+
+	gl_clear_err();
+
 	return true;
 }
 
@@ -1279,7 +1284,7 @@ void *gl_shadow_from_mask(backend_t *base, void *mask,
 		    1.0, gsctx->blur_context, NULL, (coord_t){0}, &reg_blur, NULL,
 		    source_texture,
 		    (geometry_t){.width = new_inner->width, .height = new_inner->height},
-		    fbo, gd->default_mask_texture);
+		    fbo, gd->default_mask_texture, 0);
 		pixman_region32_fini(&reg_blur);
 	}
 

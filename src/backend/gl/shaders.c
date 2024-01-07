@@ -54,9 +54,11 @@ const char interpolating_vert[] = GLSL(330,
 );
 const char masking_glsl[] = GLSL(330,
 	uniform sampler2D mask_tex;
+	uniform sampler2D win_tex;
 	uniform vec2 mask_offset;
 	uniform float mask_corner_radius;
 	uniform bool mask_inverted;
+	uniform bool use_win;
 	in vec2 texcoord;
 	float mask_rectangle_sdf(vec2 point, vec2 half_size) {
 		vec2 d = abs(point) - half_size;
@@ -66,6 +68,7 @@ const char masking_glsl[] = GLSL(330,
 		vec2 mask_size = textureSize(mask_tex, 0);
 		vec2 maskcoord = texcoord - mask_offset;
 		vec4 mask = texture2D(mask_tex, maskcoord / mask_size);
+		vec4 win = texture2D(win_tex, maskcoord / mask_size);
 		if (mask_corner_radius != 0) {
 			vec2 inner_size = mask_size - vec2(mask_corner_radius) * 2.0f;
 			float dist = mask_rectangle_sdf(maskcoord - mask_size / 2.0f,
@@ -74,9 +77,19 @@ const char masking_glsl[] = GLSL(330,
 				mask.r *= (1.0f - clamp(dist, 0.0f, 1.0f));
 			}
 		}
+
 		if (mask_inverted) {
 			mask.rgb = 1.0 - mask.rgb;
 		}
+
+		const float rolloff_threshold = 0.33;
+
+		if (use_win) {
+			if (win.a < rolloff_threshold) {
+				mask.r *= win.a / rolloff_threshold;
+			}
+		}
+
 		return mask.r;
 	}
 );

@@ -281,7 +281,7 @@ void paint_all_new(session_t *ps, struct managed_win *t, bool ignore_damage) {
 				// (reg_paint_in_bound = reg_bound \cap reg_paint)
 				ps->backend_data->ops->blur(
 				    ps->backend_data, blur_opacity,
-				    ps->backend_blur_context, w->mask_image, window_coord,
+				    ps->backend_blur_context, w->mask_image, w->win_image, window_coord,
 				    &reg_paint_in_bound, &reg_visible);
 			} else {
 				// Window itself is solid, we only need to blur the frame
@@ -302,7 +302,7 @@ void paint_all_new(session_t *ps, struct managed_win *t, bool ignore_damage) {
 				}
 				ps->backend_data->ops->blur(
 				    ps->backend_data, blur_opacity, ps->backend_blur_context,
-				    w->mask_image, window_coord, &reg_blur, &reg_visible);
+				    w->mask_image, w->win_image, window_coord, &reg_blur, &reg_visible);
 				pixman_region32_fini(&reg_blur);
 			}
 		}

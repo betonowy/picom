@@ -373,7 +373,7 @@ static void fill(backend_t *base, struct color c, const region_t *clip) {
 	                         .height = to_u16_checked(extent->y2 - extent->y1)}});
 }
 
-static bool blur(backend_t *backend_data, double opacity, void *ctx_, void *mask,
+static bool blur(backend_t *backend_data, double opacity, void *ctx_, void *mask, void* win_image attr_unused,
                  coord_t mask_dst, const region_t *reg_blur, const region_t *reg_visible) {
 	struct _xrender_blur_context *bctx = ctx_;
 	if (bctx->method == BLUR_METHOD_NONE) {

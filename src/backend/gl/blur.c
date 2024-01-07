@@ -1,3 +1,5 @@
+#include <GL/gl.h>
+#include <GL/glext.h>
 #include <locale.h>
 #include <stdbool.h>
 
@@ -137,7 +139,7 @@ bool gl_kernel_blur(double opacity, struct gl_blur_context *bctx, const rect_t *
 bool gl_dual_kawase_blur(double opacity, struct gl_blur_context *bctx, const rect_t *extent,
                          struct backend_image *mask, coord_t mask_dst, const GLuint vao[2],
                          const int vao_nelems[2], GLuint source_texture,
-                         geometry_t source_size, GLuint target_fbo, GLuint default_mask) {
+                         geometry_t source_size, GLuint target_fbo, GLuint default_mask, GLuint win_texture) {
 	int dst_y_fb_coord = bctx->fb_height - extent->y2;
 
 	int iterations = bctx->blur_texture_count;
@@ -193,6 +195,20 @@ bool gl_dual_kawase_blur(double opacity, struct gl_blur_context *bctx, const rec
 	glUseProgram(up_pass->prog);
 
 	glUniform2f(up_pass->texorig_loc, (GLfloat)extent->x1, (GLfloat)dst_y_fb_coord);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, default_mask);
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, win_texture);
+
+	glUniform1i(up_pass->uniform_mask_tex, 1);
+	glUniform2f(up_pass->uniform_mask_offset, 0.0F, 0.0F);
+	glUniform1i(up_pass->uniform_mask_inverted, 0);
+	glUniform1f(up_pass->uniform_mask_corner_radius, 0.0F);
+	glUniform1f(up_pass->uniform_opacity, 1.0F);
+	glUniform1i(up_pass->uniform_win_tex, 2);
+	glUniform1i(up_pass->uniform_use_win, 1);
 
 	for (int i = iterations - 1; i >= 0; --i) {
 		// Scale output width / height back by two in each iteration
@@ -259,10 +275,10 @@ bool gl_dual_kawase_blur(double opacity, struct gl_blur_context *bctx, const rec
 	return true;
 }
 
-bool gl_blur_impl(double opacity, struct gl_blur_context *bctx, void *mask,
-                  coord_t mask_dst, const region_t *reg_blur,
-                  const region_t *reg_visible attr_unused, GLuint source_texture,
-                  geometry_t source_size, GLuint target_fbo, GLuint default_mask) {
+bool gl_blur_impl(double opacity, struct gl_blur_context *bctx, void *mask, coord_t mask_dst,
+                  const region_t *reg_blur, const region_t *reg_visible attr_unused,
+                  GLuint source_texture, geometry_t source_size, GLuint target_fbo,
+                  GLuint default_mask, GLuint win_texture) {
 	bool ret = false;
 
 	if (source_size.width != bctx->fb_width || source_size.height != bctx->fb_height) {
@@ -371,7 +387,7 @@ bool gl_blur_impl(double opacity, struct gl_blur_context *bctx, void *mask,
 	if (bctx->method == BLUR_METHOD_DUAL_KAWASE) {
 		ret = gl_dual_kawase_blur(opacity, bctx, extent_resized, mask, mask_dst,
 		                          vao, vao_nelems, source_texture, source_size,
-		                          target_fbo, default_mask);
+		                          target_fbo, default_mask, win_texture);
 	} else {
 		ret = gl_kernel_blur(opacity, bctx, extent_resized, mask, mask_dst, vao,
 		                     vao_nelems, source_texture, source_size, target_fbo,
@@ -399,14 +415,18 @@ bool gl_blur_impl(double opacity, struct gl_blur_context *bctx, void *mask,
 	return ret;
 }
 
-bool gl_blur(backend_t *base, double opacity, void *ctx, void *mask, coord_t mask_dst,
+bool gl_blur(backend_t *base, double opacity, void *ctx, void *mask, void* win_image, coord_t mask_dst,
              const region_t *reg_blur, const region_t *reg_visible attr_unused) {
 	auto gd = (struct gl_data *)base;
 	auto bctx = (struct gl_blur_context *)ctx;
+
+	struct backend_image *img = win_image;
+	auto inner = (struct gl_texture *)img->inner;
+
 	return gl_blur_impl(opacity, bctx, mask, mask_dst, reg_blur, reg_visible,
 	                    gd->back_texture,
 	                    (geometry_t){.width = gd->width, .height = gd->height},
-	                    gd->back_fbo, gd->default_mask_texture);
+	                    gd->back_fbo, gd->default_mask_texture, inner->texture);
 }
 
 static inline void gl_free_blur_shader(gl_blur_shader_t *shader) {
@@ -799,6 +819,8 @@ bool gl_create_dual_kawase_blur_context(void *blur_context, GLfloat *projection,
 		bind_uniform(up_pass, mask_offset);
 		bind_uniform(up_pass, mask_inverted);
 		bind_uniform(up_pass, mask_corner_radius);
+		bind_uniform(up_pass, win_tex);
+		bind_uniform(up_pass, use_win);
 
 		up_pass->texorig_loc =
 		    glGetUniformLocationChecked(up_pass->prog, "texorig");

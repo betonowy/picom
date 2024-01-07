@@ -58,7 +58,7 @@ if get_option('warning_level') != '0'
             'nonnull', 'shadow', 'no-type-limits', 'old-style-declaration', 'override-init',
             'sign-compare', 'type-limits', 'uninitialized', 'shift-negative-value',
             'unused-but-set-parameter', 'unused-parameter', 'implicit-fallthrough=2',
-            'no-unknown-warning-option', 'no-missing-braces', 'conversion', 'empty-body' ]
+            'no-unknown-warning-option', 'no-missing-braces', 'conversion', 'empty-body', 'fatal-errors' ]
   foreach w : warns
           if cc.has_argument('-W'+w)
                   add_global_arguments('-W'+w, language: 'c')

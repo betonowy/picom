@@ -46,6 +46,8 @@ typedef struct {
 	GLint uniform_mask_offset;
 	GLint uniform_mask_corner_radius;
 	GLint uniform_mask_inverted;
+	GLint uniform_win_tex;
+	GLint uniform_use_win;
 } gl_win_shader_t;
 
 // Program and uniforms for brightness shader
@@ -65,6 +67,9 @@ typedef struct {
 	GLint uniform_opacity;
 	GLint texorig_loc;
 	GLint scale_loc;
+
+	GLint uniform_win_tex;
+	GLint uniform_use_win;
 
 	GLint uniform_mask_tex;
 	GLint uniform_mask_offset;
@@ -161,12 +166,12 @@ void *gl_make_mask(backend_t *base, geometry_t size, const region_t *reg);
 
 void *gl_clone(backend_t *base, const void *image_data, const region_t *reg_visible);
 
-bool gl_blur(backend_t *base, double opacity, void *ctx, void *mask, coord_t mask_dst,
+bool gl_blur(backend_t *base, double opacity, void *ctx, void *mask, void* win_image, coord_t mask_dst,
              const region_t *reg_blur, const region_t *reg_visible);
-bool gl_blur_impl(double opacity, struct gl_blur_context *bctx, void *mask,
-                  coord_t mask_dst, const region_t *reg_blur,
-                  const region_t *reg_visible attr_unused, GLuint source_texture,
-                  geometry_t source_size, GLuint target_fbo, GLuint default_mask);
+bool gl_blur_impl(double opacity, struct gl_blur_context *bctx, void *mask, coord_t mask_dst,
+                  const region_t *reg_blur, const region_t *reg_visible attr_unused,
+                  GLuint source_texture, geometry_t source_size, GLuint target_fbo,
+                  GLuint default_mask, GLuint win_image);
 void *gl_create_blur_context(backend_t *base, enum blur_method, void *args);
 void gl_destroy_blur_context(backend_t *base, void *ctx);
 struct backend_shadow_context *gl_create_shadow_context(backend_t *base, double radius);

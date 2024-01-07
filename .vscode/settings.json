@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "backend.h": "c",
+        "common.h": "c",
+        "config.h": "c",
+        "types.h": "c",
+        "region.h": "c",
+        "glext.h": "c",
+        "khrplatform.h": "c"
+    }
+}
